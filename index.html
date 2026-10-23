@@ -8,7 +8,7 @@
   /* ============================================================
      앱 목록 — 여기만 고치면 됩니다.
      name: 아이콘 아래 이름 / url: 접속 주소
-     icon: 심볼 이름(book, building, cap, photo, chart, doc, users, calendar, star, gear) 또는 이모지
+     icon: 심볼 이름(cube, gallery, book, building, cap, photo, chart, doc, users, calendar, star, gear) 또는 이모지
      color: 아이콘 그라데이션 [위, 아래]
      앞의 4개는 오른쪽 독(즐겨찾기)에도 같이 표시됩니다.
      ============================================================ */
@@ -16,10 +16,12 @@
   const WEATHER = { name: "양산", lat: 35.335, lon: 129.037 };
 
   const APPS = [
-    { name: "교육과정",   url: "https://curriculum-hub-lake.vercel.app",     icon: "book",     color: ["#5ac8fa", "#0a66d6"] },
-    { name: "국고지원",   url: "https://gukgo-hub.vercel.app",               icon: "building", color: ["#ff7a70", "#d70015"] },
-    { name: "AID 이수",   url: "https://aid-hub-eight.vercel.app",           icon: "cap",      color: ["#c48cff", "#6d2cf0"] },
-    { name: "갤러리",     url: "https://photo-gallery-delta-self.vercel.app", icon: "photo",    color: ["#ffd60a", "#ff8a00"] },
+    // 각 앱 첫 화면의 색과 로고를 그대로 아이콘으로 (cube = 허브 앱 공통 큐브 로고)
+    { name: "교육과정",   url: "https://curriculum-hub-lake.vercel.app", icon: "cube", color: ["#2a2415", "#b8891c"] },
+    { name: "소단위 이수", url: "https://microdegree-hub.vercel.app",     icon: "cube", color: ["#062012", "#22a05a"] },
+    { name: "AID 이수",   url: "https://aid-hub-eight.vercel.app",       icon: "cube", color: ["#2a1b4e", "#6b3fc4"] },
+    { name: "주요 링크",   url: "https://ysu-campus-sync.vercel.app",     icon: "cube", color: ["#0f2a3a", "#1b7fb8"] },
+    { name: "기관평가",   url: "https://accredit-hub.vercel.app",        icon: "cube", color: ["#0c112a", "#3b4fd8"] },
   ];
 </script>
 <style>
@@ -239,6 +241,19 @@
     transition: transform .15s ease, filter .15s ease;
   }
   .icon svg { width: 58%; height: 58%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.2)); }
+  /* 허브 앱: 첫 화면처럼 아래쪽이 밝아지는 물결 + 반짝이는 조각 */
+  .icon.i-cube::before {
+    background:
+      radial-gradient(70% 45% at 50% 115%, rgba(255,255,255,.28), rgba(255,255,255,0) 70%),
+      radial-gradient(circle at 20% 22%, rgba(255,255,255,.5) 0 2.5%, transparent 3%),
+      radial-gradient(circle at 78% 30%, rgba(255,255,255,.4) 0 2%, transparent 2.5%),
+      radial-gradient(circle at 70% 72%, rgba(255,255,255,.35) 0 2%, transparent 2.5%),
+      radial-gradient(circle at 28% 80%, rgba(255,255,255,.3) 0 1.8%, transparent 2.3%),
+      linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,0) 50%);
+  }
+  .icon.i-cube svg { width: 62%; height: 62%; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+  .icon.i-gallery::before { background: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,0) 40%, rgba(0,0,0,.05)); }
+  .icon.i-gallery svg { width: 100%; height: 100%; filter: none; }
   .icon::before { /* 유리 하이라이트 */
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background:
@@ -476,7 +491,23 @@
     star:     '<path d="m12 3.5 2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9L6.7 20l1.1-6-4.4-4.2 6-.8z"/>',
     gear:     '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
   };
-  const symbol = ic => GLYPH[ic]
+  // 허브 앱 공통 큐브 로고 (분홍 · 짙은 회색 · 하늘 · 라임)
+  const FILLED = {
+    cube: `<svg viewBox="0 0 100 100">
+      <polygon points="50,14 82,14 82,50" fill="#3b4652"/>
+      <polygon points="18,32 50,14 50,50 18,68" fill="#ec3a8a"/>
+      <polygon points="50,50 82,50 82,86" fill="#2cb6e8"/>
+      <polygon points="18,68 50,50 82,86 50,86" fill="#c9d733"/>
+      <polygon points="50,50 82,50 50,14" fill="#2f3842"/>
+    </svg>`,
+    gallery: `<svg viewBox="0 0 100 100">
+      <rect x="0" y="0" width="100" height="26" fill="#b5162a"/>
+      <rect x="22" y="40" width="56" height="42" rx="6" fill="#fff" stroke="#d9d1c0" stroke-width="2"/>
+      <circle cx="38" cy="54" r="5" fill="#e6b84a"/>
+      <path d="M26 78 L44 62 L54 70 L62 64 L74 78 Z" fill="#8fb27a"/>
+    </svg>`,
+  };
+  const symbol = ic => FILLED[ic] ? FILLED[ic] : GLYPH[ic]
     ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${GLYPH[ic]}</svg>`
     : "";
   const make = (a, n) => {
@@ -485,8 +516,8 @@
     el.href = a.url; el.target = "_blank"; el.rel = "noopener"; el.title = a.name;
     el.style.setProperty("--i", n);
     const [c1, c2] = a.color || ["#8e8e93", "#3a3a3c"];
-    el.innerHTML = `<span class="icon" style="background:linear-gradient(160deg,${c1},${c2})">${symbol(a.icon)}</span><span class="label"></span>`;
-    if (!GLYPH[a.icon]) el.querySelector(".icon").textContent = a.icon || a.name[0];
+    el.innerHTML = `<span class="icon ${a.icon in FILLED ? "i-" + a.icon : ""}" style="background:linear-gradient(170deg,${c1},${c2})">${symbol(a.icon)}</span><span class="label"></span>`;
+    if (!GLYPH[a.icon] && !FILLED[a.icon]) el.querySelector(".icon").textContent = a.icon || a.name[0];
     el.querySelector(".label").textContent = a.name;
     return el;
   };
