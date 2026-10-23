@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Apps</title>
+<script>
+  /* ============================================================
+     앱 목록 — 여기만 고치면 됩니다.
+     name: 아이콘 아래 이름 / url: 접속 주소
+     icon: 심볼 이름(book, building, cap, photo, chart, doc, users, calendar, star, gear) 또는 이모지
+     color: 아이콘 그라데이션 [위, 아래]
+     앞의 4개는 오른쪽 독(즐겨찾기)에도 같이 표시됩니다.
+     ============================================================ */
+  // 날씨 위치 (Open-Meteo, 무료·키 불필요) — 위도·경도와 표시 이름
+  const WEATHER = { name: "양산", lat: 35.335, lon: 129.037 };
+
+  const APPS = [
+    { name: "교육과정",   url: "https://curriculum-hub-lake.vercel.app",     icon: "book",     color: ["#5ac8fa", "#0a66d6"] },
+    { name: "국고지원",   url: "https://gukgo-hub.vercel.app",               icon: "building", color: ["#ff7a70", "#d70015"] },
+    { name: "AID 이수",   url: "https://aid-hub-eight.vercel.app",           icon: "cap",      color: ["#c48cff", "#6d2cf0"] },
+    { name: "갤러리",     url: "https://photo-gallery-delta-self.vercel.app", icon: "photo",    color: ["#ffd60a", "#ff8a00"] },
+  ];
+</script>
+<style>
+  :root {
+    --bg: #fff; --text: #1d1d1f; --sub: #6e6e73; --blue: #0071e3;
+    --shadow: rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #000; --text: #f5f5f7; --sub: #a1a1a6; --shadow: rgba(0,0,0,.85); }
+  }
+  :root[data-theme="dark"] { --bg: #000; --text: #f5f5f7; --sub: #a1a1a6; --shadow: rgba(0,0,0,.85); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro KR", "Apple SD Gothic Neo",
+                 "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    -webkit-font-smoothing: antialiased; overflow: hidden;
+  }
+
+  .stage {
+    height: 100vh; height: 100svh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 3vh 16px 3vh; overflow: hidden;
+  }
+  .head { text-align: center; }
+  .head .eyebrow { font-size: clamp(15px, 1.5vw, 21px); font-weight: 600; letter-spacing: -.01em; }
+  .head h1 { margin-top: 4px; font-size: clamp(24px, 3.6vw, 44px); font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+
+  .view {
+    flex: 1; width: 100%; display: flex; align-items: center; justify-content: center;
+    perspective: 2600px; perspective-origin: 50% 42%;
+  }
+
+  /* ---------- 기기 ----------
+     --w: 한쪽 화면 폭, --h: 높이, --t: 두께
+     --a: 접힌 각도(90=닫힘, 0=완전히 펼침), --y: 기기 전체 회전, --s: 확대 */
+  .device {
+    --w: 300px; --h: 430px; --t: 9px; --a: 90deg; --y: 0deg; --s: 1; --r: calc(var(--w) * .085);
+    --frame: #1b2130; --frame-hi: #6f7890; --frame-lo: #0a0d14; --body: #232a3b;
+    position: relative; width: calc(var(--w) * 2); height: var(--h);
+    transform-style: preserve-3d;
+    transform: scale(var(--s)) rotateX(2deg) rotateY(var(--y));
+  }
+  .device[data-color="white"] {
+    --frame: #e9e7e2; --frame-hi: #fff; --frame-lo: #b8b5ae; --body: #ece9e3;
+  }
+  .panel {
+    position: absolute; top: 0; width: var(--w); height: 100%;
+    transform-style: preserve-3d;
+  }
+  .panel.left  { left: 0;        transform-origin: right center; transform: rotateY(var(--a)); }
+  .panel.right { left: var(--w); transform-origin: left center;  transform: rotateY(calc(-1 * var(--a))) translateZ(.5px); }
+
+  .face {
+    position: absolute; inset: 0; background: var(--frame);
+    padding: calc(var(--w) * .02);
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    box-shadow: 0 40px 70px -30px var(--shadow);
+  }
+  .panel.left  .face.front { border-radius: var(--r) 0 0 var(--r); padding-right: 1px; }
+  .panel.right .face.front { border-radius: 0 var(--r) var(--r) 0; padding-left: 1px; }
+  .face.back { transform: translateZ(calc(-1 * var(--t))) rotateY(180deg); padding: calc(var(--w) * .02); }
+  .panel.left  .face.back { border-radius: 0 var(--r) var(--r) 0; padding-left: 1px; }
+  .panel.right .face.back { border-radius: var(--r) 0 0 var(--r); padding-right: 1px; }
+  .face::after { /* 티타늄 프레임 */
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: inset 0 0 0 1.5px var(--frame-hi), inset 0 0 0 3px var(--frame-lo);
+  }
+  /* 옆면(두께) */
+  .edge {
+    /* 모서리가 둥근 만큼 위아래를 비워 코너 밖으로 튀어나오지 않게 */
+    position: absolute; top: var(--r); height: calc(100% - var(--r) * 2); width: var(--t);
+    background: linear-gradient(90deg, var(--frame-lo), var(--frame-hi) 50%, var(--frame-lo));
+    border-radius: 2px;
+  }
+  .panel.left  .edge { left: 0;  transform-origin: left center;  transform: rotateY(90deg); }
+  .panel.right .edge { right: 0; transform-origin: right center; transform: rotateY(-90deg); }
+  /* 윗면 버튼 */
+  .btn {
+    position: absolute; top: -3px; height: 3px; border-radius: 2px 2px 0 0;
+    background: linear-gradient(90deg, var(--frame-lo), var(--frame-hi), var(--frame-lo));
+  }
+  .panel.right .btn.b1 { right: 12%; width: 7%; }
+  .panel.right .btn.b2 { right: 21%; width: 4%; }
+  .panel.left  .btn.b3 { left: 12%; width: 9%; }
+
+  /* ---------- 안쪽 화면 ---------- */
+  .screen {
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    color: #fff; font-size: calc(var(--w) * .036);
+    background: url("wall-day.svg") no-repeat; background-size: 200% 100%;
+  }
+  .panel.left  .screen { border-radius: calc(var(--r) * .78) 0 0 calc(var(--r) * .78); background-position: 0 0; }
+  .panel.right .screen { border-radius: 0 calc(var(--r) * .78) calc(var(--r) * .78) 0; background-position: 100% 0; }
+  .crease { position: absolute; top: 0; bottom: 0; width: 7%; pointer-events: none; }
+  .panel.left  .crease { right: 0; background: linear-gradient(to right, transparent, rgba(0,0,0,.12) 85%, rgba(255,255,255,.12)); }
+  .panel.right .crease { left: 0;  background: linear-gradient(to left,  transparent, rgba(0,0,0,.12) 85%, rgba(255,255,255,.12)); }
+  .shade { position: absolute; inset: 0; background: #000; pointer-events: none; opacity: calc(var(--a) / 90deg * .4); }
+
+  .cam {
+    position: absolute; top: 3.2%; right: 3.6%; width: 3.2%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #2a2f45, #000 70%); opacity: .55;
+  }
+  .status {
+    position: absolute; top: 3.8%; right: 9%; display: flex; gap: .5em; align-items: center;
+    font-size: calc(var(--w) * .038); font-weight: 600;
+  }
+  .status svg { width: 1.1em; height: 1.1em; }
+
+  /* 왼쪽: 날씨 카드 (Apple 날씨 앱 스타일) */
+  .weather {
+    position: absolute; left: 7%; top: 10%; width: 74%; height: 80%;
+    border-radius: 8%/6%; overflow: hidden;
+    background: linear-gradient(180deg, var(--wx1, #3f7fd0) 0%, var(--wx2, #6fa6e8) 60%, var(--wx3, #9cc3ef) 100%);
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    display: flex; flex-direction: column; gap: 3.5%; padding: 6% 6% 5%;
+    transition: background 1s; text-shadow: 0 1px 2px rgba(0,0,0,.15);
+  }
+  .weather .top { text-align: center; line-height: 1.1; }
+  .weather .city { font-size: calc(var(--w) * .045); font-weight: 500; }
+  .weather .temp { font-size: calc(var(--w) * .2); font-weight: 200; letter-spacing: -.05em; line-height: 1; margin: .02em 0 0 .25em; }
+  .weather .desc { font-size: calc(var(--w) * .036); font-weight: 500; margin-top: .25em; }
+  .weather .hilo { font-size: calc(var(--w) * .036); font-weight: 500; margin-top: .15em; }
+  .weather .box {
+    background: rgba(255,255,255,.18); border-radius: calc(var(--w) * .04);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); padding: 4% 5%;
+    font-size: calc(var(--w) * .031);
+  }
+  .weather .box h4 {
+    font-size: .8em; font-weight: 600; letter-spacing: .02em; opacity: .75;
+    display: flex; align-items: center; gap: .4em; padding-bottom: .5em;
+    border-bottom: 1px solid rgba(255,255,255,.25); margin-bottom: .4em;
+  }
+  .weather .box h4 svg { width: 1.1em; height: 1.1em; }
+  .weather .hours { display: flex; justify-content: space-between; }
+  .weather .hours div { display: flex; flex-direction: column; align-items: center; gap: .35em; }
+  .weather .hours .ic { font-size: 1.3em; }
+  .weather .hours b { font-weight: 600; }
+  .weather .week { flex: 1; display: flex; flex-direction: column; min-height: 0; font-size: calc(var(--w) * .027); line-height: 1.2; }
+  .weather .week .rows { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
+  .weather .week .rows div {
+    display: grid; grid-template-columns: 2.6em 1.5em 2.3em 1fr 2.3em; align-items: center; gap: .3em;
+    border-top: 1px solid rgba(255,255,255,.18); padding: .05em 0; min-height: 0;
+  }
+  .weather .week .rows div:first-child { border-top: 0; }
+  .weather .week .ic { text-align: center; font-size: 1.1em; }
+  .weather .week .lo { opacity: .7; text-align: right; font-variant-numeric: tabular-nums; }
+  .weather .week .hi { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .weather .week .bar { position: relative; height: .4em; border-radius: 1em; background: rgba(0,0,0,.2); }
+  .weather .week .bar i { position: absolute; top: 0; bottom: 0; border-radius: 1em; }
+  .weather .week .bar u {
+    position: absolute; top: 50%; width: .5em; height: .5em; margin-left: -.25em; border-radius: 50%;
+    background: #fff; transform: translateY(-50%); box-shadow: 0 0 0 .12em rgba(0,0,0,.35);
+  }
+
+  /* 오른쪽: 위젯 */
+  .widgets {
+    position: absolute; left: 8%; top: 12%; width: 66%;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6%;
+  }
+  .widget {
+    aspect-ratio: 1; border-radius: 16%; padding: 10%;
+    display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    overflow: hidden; position: relative;
+  }
+  .widget.clock { background: linear-gradient(170deg, #4a90e2, #1d5fb8); }
+  .widget.clock .city { font-size: calc(var(--w) * .034); font-weight: 600; }
+  .widget.clock .big  { font-size: calc(var(--w) * .11); font-weight: 500; letter-spacing: -.03em; line-height: 1.1; }
+  .widget.clock .foot { margin-top: auto; font-size: calc(var(--w) * .028); opacity: .9; line-height: 1.35; }
+  /* 지도 위젯 */
+  .widget.map {
+    padding: 0; color: #1d1d1f;
+    background:
+      linear-gradient(90deg, transparent 48%, #fff 48% 54%, transparent 54%),
+      linear-gradient(0deg,  transparent 30%, #fff 30% 36%, transparent 36%),
+      linear-gradient(35deg, transparent 60%, #fde9a8 60% 64%, transparent 64%),
+      radial-gradient(40% 30% at 20% 20%, #cfe6c0, transparent 70%),
+      radial-gradient(35% 35% at 85% 80%, #bfe0b4, transparent 70%),
+      #ede8df;
+  }
+  .widget.map .pin {
+    position: absolute; left: 50%; top: 42%; width: 28%; aspect-ratio: 1; border-radius: 50%;
+    transform: translate(-50%, -50%); background: #fff; display: grid; place-items: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,.25); font-size: calc(var(--w) * .07);
+  }
+  .widget.map .pin::after {
+    content: ""; position: absolute; inset: -14%; border-radius: 50%;
+    border: 2px solid #30d158; opacity: .6;
+  }
+  .widget.map .where {
+    position: absolute; left: 9%; bottom: 9%; line-height: 1.25;
+    font-size: calc(var(--w) * .028); color: #6e6e73;
+  }
+  .widget.map .where b { display: block; font-size: calc(var(--w) * .036); color: #1d1d1f; }
+
+  /* 앱 아이콘 */
+  .grid {
+    position: absolute; left: 8%; top: 50%; width: 66%;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 7% 2%;
+  }
+  .app {
+    display: flex; flex-direction: column; align-items: center; gap: .35em;
+    text-decoration: none; color: #fff;
+    opacity: 0; transform: scale(.4) translateY(10px);
+    transition: opacity .45s ease, transform .55s cubic-bezier(.2,1.4,.4,1);
+    transition-delay: calc(var(--i) * 40ms);
+    pointer-events: none; -webkit-tap-highlight-color: transparent;
+  }
+  .open .app { opacity: 1; transform: none; pointer-events: auto; }
+  .icon {
+    --sq: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 0C11 0 0 11 0 50s11 50 50 50 50-11 50-50S89 0 50 0z'/></svg>");
+    position: relative; width: 78%; aspect-ratio: 1;
+    -webkit-mask: var(--sq) center / 100% 100% no-repeat; mask: var(--sq) center / 100% 100% no-repeat;
+    display: grid; place-items: center; overflow: hidden;
+    font-size: calc(var(--w) * .065); font-weight: 700; color: #fff;
+    transition: transform .15s ease, filter .15s ease;
+  }
+  .icon svg { width: 58%; height: 58%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.2)); }
+  .icon::before { /* 유리 하이라이트 */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(120% 70% at 50% -10%, rgba(255,255,255,.45), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,0) 50%, rgba(0,0,0,.1));
+  }
+  .app { filter: drop-shadow(0 4px 8px rgba(0,0,0,.22)); }
+  .app:hover .icon { transform: scale(1.08); }
+  .app:active .icon { transform: scale(.92); filter: brightness(.85); }
+  .app:focus-visible .icon { outline: 3px solid #fff; outline-offset: 3px; }
+  .label {
+    font-size: max(9px, calc(var(--w) * .03)); font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35);
+    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* 캘린더 · 시계 (iOS 스타일 장식 타일) */
+  .icon.ical { background: #fff; color: #1d1d1f; display: flex; flex-direction: column; justify-content: center; line-height: 1; }
+  .icon.ical::before, .icon.iclock::before { display: none; }
+  .icon.ical small { font-size: .38em; color: #ff3b30; font-weight: 600; margin-bottom: .1em; }
+  .icon.ical b { font-size: 1.1em; font-weight: 400; letter-spacing: -.04em; }
+  .icon.iclock { background: #000; }
+  .icon.iclock .dial { position: absolute; inset: 8%; border-radius: 50%; background: #fff; }
+  .icon.iclock .hand { position: absolute; left: 50%; bottom: 50%; transform-origin: 50% 100%; border-radius: 2px; background: #1d1d1f; }
+  .icon.iclock .hr  { width: 5%; height: 24%; margin-left: -2.5%; }
+  .icon.iclock .mn  { width: 4%; height: 34%; margin-left: -2%; }
+  .icon.iclock .sc  { width: 2%; height: 38%; margin-left: -1%; background: #ff9500; }
+  .icon.iclock .dot { position: absolute; left: 50%; top: 50%; width: 9%; aspect-ratio: 1; border-radius: 50%; background: #ff9500; transform: translate(-50%, -50%); }
+
+  .dock {
+    position: absolute; right: 5%; top: 50%; transform: translateY(-50%);
+    width: 15.5%; padding: 10% 0; border-radius: 999px;
+    background: rgba(255,255,255,.3); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+    display: flex; flex-direction: column; align-items: center; gap: calc(var(--w) * .05);
+  }
+  .dock .app { width: 72%; gap: 0; }
+  .dock .icon { width: 100%; }
+  .dock .label { display: none; }
+  .device.compact .grid .label { display: none; }   /* 좁은 화면에서는 이름 숨김 */
+
+  .dots { position: absolute; left: 36%; bottom: 7.5%; display: flex; gap: .4em; }
+  .dots i { width: .45em; height: .45em; border-radius: 50%; background: rgba(255,255,255,.95); }
+  .dots i + i { opacity: .45; }
+  .search {
+    position: absolute; right: 5%; bottom: 5.5%; width: 12%; aspect-ratio: 1; border-radius: 50%;
+    background: rgba(255,255,255,.35); backdrop-filter: blur(8px); display: grid; place-items: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+  }
+  .search svg { width: 45%; height: 45%; }
+
+  /* ---------- 바깥 화면 (커버 디스플레이 · 잠금 화면) ---------- */
+  .cover {
+    position: relative; width: 100%; height: 100%; overflow: hidden; color: #fff;
+    border-radius: 0 calc(var(--r) * .78) calc(var(--r) * .78) 0;
+    background: url("wall-dusk.svg") center / cover no-repeat;
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 9%;
+  }
+  .cover .cam { opacity: 1; right: auto; left: 50%; top: 2.6%; transform: translateX(-50%); width: 3.6%; }
+  .cover .date { font-size: calc(var(--w) * .05); font-weight: 600; opacity: .9; }
+  .cover .time {
+    font-size: calc(var(--w) * .36); font-weight: 200; letter-spacing: -.05em; line-height: 1;
+    margin-top: .02em; font-variant-numeric: tabular-nums;
+  }
+  .cover .quick {
+    position: absolute; bottom: 6%; left: 10%; right: 10%; display: flex; justify-content: space-between;
+  }
+  .cover .quick i {
+    width: calc(var(--w) * .14); aspect-ratio: 1; border-radius: 50%;
+    background: rgba(255,255,255,.22); backdrop-filter: blur(8px); display: grid; place-items: center;
+  }
+  .cover .quick svg { width: 48%; height: 48%; }
+  .cover .bar {
+    position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%);
+    width: 36%; height: 4px; border-radius: 4px; background: rgba(255,255,255,.85);
+  }
+
+  /* ---------- 뒷면 (카메라) ---------- */
+  .rear {
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    border-radius: calc(var(--r) * .78) 0 0 calc(var(--r) * .78);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--body), #fff 6%), var(--body) 55%, color-mix(in srgb, var(--body), #000 12%));
+  }
+  .bump {
+    position: absolute; top: 5%; left: 7%; width: 42%; aspect-ratio: 2 / 1.08; border-radius: 28% / 52%;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--body), #fff 10%), color-mix(in srgb, var(--body), #000 18%));
+    box-shadow: 0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.2);
+    display: flex; align-items: center; justify-content: space-evenly;
+  }
+  .lens {
+    width: 38%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, #5b6e8f 0 8%, #1a2232 9% 40%, #0a0d14 41% 70%, #2d3548 71% 78%, #0f1420 79%);
+    box-shadow: 0 0 0 2px #0b0e15, 0 0 0 3.5px color-mix(in srgb, var(--frame-hi), #000 30%), inset 0 0 6px #000;
+  }
+  .flash {
+    position: absolute; top: 9%; left: 52%; width: 5%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle, #fff6d5, #d9c48a 60%, #8d7a4a); opacity: .9;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app { transition: opacity .2s; transform: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <header class="head" id="head">
+      <div class="eyebrow">My Apps</div>
+      <h1 id="greet">반가워요, 반가워요.</h1>
+    </header>
+
+    <div class="view">
+      <div class="device" id="device" data-color="night">
+        <!-- 왼쪽 반: 앞면 = 안쪽 화면(사진 카드), 뒷면 = 커버 디스플레이 -->
+        <div class="panel left">
+          <div class="edge"></div>
+          <div class="btn b3"></div>
+          <div class="face front">
+            <div class="screen">
+              <div class="weather" id="weather">
+                <div class="top">
+                  <div class="city" id="wxCity">날씨</div>
+                  <div class="temp" id="wxTemp">--°</div>
+                  <div class="desc" id="wxDesc">불러오는 중</div>
+                  <div class="hilo" id="wxHiLo"></div>
+                </div>
+                <div class="box">
+                  <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>시간별 일기예보</h4>
+                  <div class="hours" id="wxHours"></div>
+                </div>
+                <div class="box week">
+                  <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>7일간의 일기예보</h4>
+                  <div class="rows" id="wxWeek"></div>
+                </div>
+              </div>
+              <div class="crease"></div>
+              <div class="shade"></div>
+            </div>
+          </div>
+          <div class="face back">
+            <div class="cover">
+              <div class="cam"></div>
+              <div class="date js-short"></div>
+              <div class="time js-time"></div>
+              <div class="quick">
+                <i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M8 3h8l2 5-2 2v11H8V10L6 8z"/><path d="M8 10h8"/></svg></i>
+                <i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></i>
+              </div>
+              <div class="bar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 오른쪽 반: 앞면 = 안쪽 화면(위젯·앱), 뒷면 = 카메라 -->
+        <div class="panel right">
+          <div class="edge"></div>
+          <div class="btn b1"></div>
+          <div class="btn b2"></div>
+          <div class="face front">
+            <div class="screen">
+              <div class="cam"></div>
+              <div class="status">
+                <span class="js-time"></span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2.5 9.5a14 14 0 0 1 19 0M5.5 12.8a9.5 9.5 0 0 1 13 0M8.7 16a5 5 0 0 1 6.6 0"/><circle cx="12" cy="19.3" r="1" fill="currentColor"/></svg>
+              </div>
+
+              <div class="widgets">
+                <div class="widget clock">
+                  <div class="city">현재 시각</div>
+                  <div class="big js-time"></div>
+                  <div class="foot js-date"></div>
+                </div>
+                <div class="widget map">
+                  <div class="pin">🏫</div>
+                  <div class="where">지금<b>캠퍼스</b></div>
+                </div>
+              </div>
+
+              <nav class="grid" id="grid"></nav>
+              <nav class="dock" id="dock"></nav>
+
+              <div class="dots"><i></i><i></i></div>
+              <div class="search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+              </div>
+              <div class="crease"></div>
+              <div class="shade"></div>
+            </div>
+          </div>
+          <div class="face back">
+            <div class="rear">
+              <div class="bump"><i class="lens"></i><i class="lens"></i></div>
+              <div class="flash"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+(() => {
+  const device = document.getElementById("device");
+  const head = document.getElementById("head");
+  const $ = id => document.getElementById(id);
+  const all = (sel, fn) => document.querySelectorAll(sel).forEach(fn);
+
+  // 시계 · 날짜
+  const tick = () => {
+    const d = new Date();
+    const t = d.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit", hour12: false });
+    all(".js-time", el => el.textContent = t);
+    all(".js-date", el => el.textContent = d.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }));
+    all(".js-short", el => el.textContent = d.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" }));
+    all(".icon.ical small", el => el.textContent = d.toLocaleDateString("ko-KR", { weekday: "long" }));
+    all(".icon.ical b", el => el.textContent = d.getDate());
+    const s = d.getSeconds(), m = d.getMinutes() + s / 60, h = (d.getHours() % 12) + m / 60;
+    all(".iclock .hr", el => el.style.transform = `rotate(${h * 30}deg)`);
+    all(".iclock .mn", el => el.style.transform = `rotate(${m * 6}deg)`);
+    all(".iclock .sc", el => el.style.transform = `rotate(${s * 6}deg)`);
+  };
+
+  // 앱 아이콘
+  // 흰색 심볼 (SF Symbols 느낌)
+  const GLYPH = {
+    book:     '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v14.5a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"/><path d="M8 7h8M8 10.5h5"/>',
+    building: '<path d="M3 21h18M4 9h16M5 9l7-5 7 5"/><path d="M6.5 9v12M10.3 9v12M13.7 9v12M17.5 9v12"/>',
+    cap:      '<path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6 11.6V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.4"/><path d="M21.5 9.5V15"/>',
+    photo:    '<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.7"/><path d="M21 15.5l-5-5-7 7M3 17l4-4 3 3"/>',
+    chart:    '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+    doc:      '<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 12h6M9 16h6"/>',
+    users:    '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4.5-6.2"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    star:     '<path d="m12 3.5 2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9L6.7 20l1.1-6-4.4-4.2 6-.8z"/>',
+    gear:     '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  };
+  const symbol = ic => GLYPH[ic]
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${GLYPH[ic]}</svg>`
+    : "";
+  const make = (a, n) => {
+    const el = document.createElement("a");
+    el.className = "app";
+    el.href = a.url; el.target = "_blank"; el.rel = "noopener"; el.title = a.name;
+    el.style.setProperty("--i", n);
+    const [c1, c2] = a.color || ["#8e8e93", "#3a3a3c"];
+    el.innerHTML = `<span class="icon" style="background:linear-gradient(160deg,${c1},${c2})">${symbol(a.icon)}</span><span class="label"></span>`;
+    if (!GLYPH[a.icon]) el.querySelector(".icon").textContent = a.icon || a.name[0];
+    el.querySelector(".label").textContent = a.name;
+    return el;
+  };
+  const tile = (cls, inner, label, n) => {
+    const el = document.createElement("span");
+    el.className = "app"; el.style.setProperty("--i", n);
+    el.innerHTML = `<span class="icon ${cls}">${inner}</span><span class="label">${label}</span>`;
+    return el;
+  };
+  APPS.forEach((a, n) => $("grid").appendChild(make(a, n)));
+  $("grid").appendChild(tile("ical", "<small></small><b></b>", "캘린더", APPS.length));
+  $("grid").appendChild(tile("iclock", '<i class="dial"></i><i class="hand hr"></i><i class="hand mn"></i><i class="hand sc"></i><i class="dot"></i>', "시계", APPS.length + 1));
+  APPS.slice(0, 4).forEach((a, n) => $("dock").appendChild(make(a, n + 2)));
+  tick(); setInterval(tick, 1000);
+
+  // 날씨: 오늘 · 시간별 · 이번 주 (Open-Meteo)
+  const WX = {
+    0:  ["☀️", "맑음",       ["#2f6fd1", "#5f9ae6", "#9ac2f0"]],
+    1:  ["🌤️", "대체로 맑음", ["#3a78d0", "#6aa2e6", "#a2c6ef"]],
+    2:  ["⛅", "구름 조금",   ["#4a7fc4", "#7aa4d8", "#aec6e6"]],
+    3:  ["☁️", "흐림",       ["#5b6b82", "#7f8fa6", "#a7b3c4"]],
+    45: ["🌫️", "안개",       ["#6b7684", "#8f99a6", "#b4bcc6"]],
+    48: ["🌫️", "안개",       ["#6b7684", "#8f99a6", "#b4bcc6"]],
+    51: ["🌦️", "이슬비",     ["#4a6690", "#6f88ad", "#9aadc8"]],
+    53: ["🌦️", "이슬비",     ["#4a6690", "#6f88ad", "#9aadc8"]],
+    55: ["🌦️", "이슬비",     ["#4a6690", "#6f88ad", "#9aadc8"]],
+    61: ["🌧️", "비",         ["#36517c", "#55729c", "#8299b8"]],
+    63: ["🌧️", "비",         ["#36517c", "#55729c", "#8299b8"]],
+    65: ["🌧️", "강한 비",     ["#2c4266", "#4a6389", "#7489a8"]],
+    71: ["🌨️", "눈",         ["#6f85a3", "#9aacc4", "#c6d2e2"]],
+    73: ["🌨️", "눈",         ["#6f85a3", "#9aacc4", "#c6d2e2"]],
+    75: ["❄️", "많은 눈",     ["#6f85a3", "#9aacc4", "#c6d2e2"]],
+    80: ["🌦️", "소나기",     ["#3f5f8f", "#607fa8", "#8da5c3"]],
+    81: ["🌧️", "소나기",     ["#3f5f8f", "#607fa8", "#8da5c3"]],
+    82: ["🌧️", "강한 소나기", ["#2c4266", "#4a6389", "#7489a8"]],
+    95: ["⛈️", "천둥번개",   ["#343a55", "#565d80", "#8187a6"]],
+    96: ["⛈️", "천둥·우박",  ["#343a55", "#565d80", "#8187a6"]],
+    99: ["⛈️", "천둥·우박",  ["#343a55", "#565d80", "#8187a6"]],
+  };
+  const wx = code => WX[code] || WX[3];
+  // 기온 → 색 (Apple 날씨 막대: 파랑 → 초록 → 노랑 → 주황)
+  const STOPS = [[0, [90, 200, 250]], [.4, [100, 210, 140]], [.7, [255, 214, 10]], [1, [255, 140, 40]]];
+  const tcolor = f => {
+    f = Math.min(1, Math.max(0, f));
+    let i = 1; while (i < STOPS.length - 1 && f > STOPS[i][0]) i++;
+    const [f0, c0] = STOPS[i - 1], [f1, c1] = STOPS[i], k = (f - f0) / (f1 - f0);
+    return `rgb(${c0.map((v, j) => Math.round(v + (c1[j] - v) * k)).join(",")})`;
+  };
+  const loadWeather = async () => {
+    $("wxCity").textContent = WEATHER.name;
+    try {
+      const u = `https://api.open-meteo.com/v1/forecast?latitude=${WEATHER.lat}&longitude=${WEATHER.lon}`
+        + `&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code`
+        + `&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&forecast_days=7`;
+      const r = await fetch(u); if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      const cur = d.current.temperature_2m;
+      const [, txt, cols] = wx(d.current.weather_code);
+      $("wxTemp").textContent = Math.round(cur) + "°";
+      $("wxDesc").textContent = txt;
+      $("wxHiLo").textContent = `최고:${Math.round(d.daily.temperature_2m_max[0])}° 최저:${Math.round(d.daily.temperature_2m_min[0])}°`;
+      cols.forEach((c, i) => $("weather").style.setProperty("--wx" + (i + 1), c));
+
+      // 시간별: 지금부터 6칸
+      const now = new Date();
+      const start = Math.max(0, d.hourly.time.findIndex(t => { const x = new Date(t); return x.getDate() === now.getDate() && x.getHours() === now.getHours(); }));
+      $("wxHours").innerHTML = d.hourly.time.slice(start, start + 6).map((t, i) =>
+        `<div><span>${i === 0 ? "지금" : new Date(t).getHours() + "시"}</span>`
+        + `<span class="ic">${wx(d.hourly.weather_code[start + i])[0]}</span>`
+        + `<b>${Math.round(d.hourly.temperature_2m[start + i])}°</b></div>`).join("");
+
+      // 7일: 주간 범위 안에서의 기온 막대 + 오늘 현재 기온 점
+      const lo = Math.min(...d.daily.temperature_2m_min), hi = Math.max(...d.daily.temperature_2m_max), span = Math.max(1, hi - lo);
+      $("wxWeek").innerHTML = d.daily.time.map((t, i) => {
+        const day = i === 0 ? "오늘" : new Date(t + "T00:00").toLocaleDateString("ko-KR", { weekday: "short" });
+        const mn = d.daily.temperature_2m_min[i], mx = d.daily.temperature_2m_max[i];
+        const l = (mn - lo) / span, w = (mx - mn) / span;
+        const dot = i === 0 ? `<u style="left:${(cur - lo) / span * 100}%"></u>` : "";
+        return `<div><span>${day}</span><span class="ic">${wx(d.daily.weather_code[i])[0]}</span>`
+          + `<span class="lo">${Math.round(mn)}°</span>`
+          + `<span class="bar"><i style="left:${l * 100}%;width:${w * 100}%;background:linear-gradient(90deg,${tcolor(l)},${tcolor(l + w)})"></i>${dot}</span>`
+          + `<span class="hi">${Math.round(mx)}°</span></div>`;
+      }).join("");
+    } catch (e) {
+      $("wxDesc").textContent = "날씨를 불러오지 못했어요"; $("wxHiLo").textContent = "";
+    }
+  };
+  loadWeather(); setInterval(loadWeather, 30 * 60 * 1000);
+
+  // 화면 크기에 맞춰 기기 크기 계산 (한쪽 화면 비율 0.7 : 1)
+  const size = () => {
+    const vw = innerWidth, vh = innerHeight;
+    const availH = (vh - head.offsetHeight) * 0.92 - 30;
+    const w = Math.min(560, (vw - 32) / 2.08, availH * 0.7);
+    device.style.setProperty("--w", w + "px");
+    device.style.setProperty("--h", w / 0.7 + "px");
+    device.style.setProperty("--t", Math.max(6, w * .03) + "px");
+    device.classList.toggle("compact", w < 230);
+  };
+
+  // 타임라인: 옆모습 → 커버 화면이 보이게 돌아섬 → 책처럼 열림(V자) → 완전히 펼침 + 확대
+  // 짧은 인사말 중 하나를 무작위로
+  const GREETS = [
+    "반가워요, 반가워요.", "오늘도 좋은 하루.", "잘 왔어요, 시작해볼까요.", "환영해요, 오늘도 화이팅.",
+    "좋은 하루 되세요.", "다시 만나 반가워요.", "오늘도 수고 많아요.", "멋진 하루가 될 거예요.",
+    "반갑습니다, 어서 오세요.", "오늘 하루도 응원해요.", "활짝, 시작해요.", "당신의 하루를 열어요.",
+  ];
+  $("greet").textContent = GREETS[Math.floor(Math.random() * GREETS.length)];
+
+  // 더 부드러운 가감속 (ease-in-out quint 느낌)
+  const ease = t => { const u = 1 - t; return 1 - u * u * u * (1 - t * t * .6) ; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const KEYS = [            // [시각(초), 접힘각, 기기회전, 확대]
+    [0.0, 90,   0, 0.85],
+    [0.4, 90,   0, 0.85],
+    [1.5, 90,  90, 0.95],   // 커버 디스플레이(잠금 화면)
+    [2.1, 90,  90, 0.95],
+    [3.4, 24,   0, 1.0 ],   // V자로 열림
+    [3.8, 24,   0, 1.0 ],
+    [4.8,  0,   0, 1.06],   // 완전히 펼침
+  ];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let open = false;
+  const apply = (a, y, s) => {
+    device.style.setProperty("--a", a + "deg");
+    device.style.setProperty("--y", y + "deg");
+    device.style.setProperty("--s", s);
+    const shouldOpen = a < 30;
+    if (shouldOpen !== open) { open = shouldOpen; device.classList.toggle("open", open); }
+  };
+
+  addEventListener("resize", size);
+  size();
+  if (reduce) { apply(0, 0, 1.06); }
+  else {
+    let start;
+    const step = now => {
+      start ??= now;
+      const t = (now - start) / 1000;
+      let i = 1; while (i < KEYS.length - 1 && t > KEYS[i][0]) i++;
+      const [t0, a0, y0, s0] = KEYS[i - 1], [t1, a1, y1, s1] = KEYS[i];
+      const k = ease(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))));
+      apply(lerp(a0, a1, k), lerp(y0, y1, k), lerp(s0, s1, k));
+      if (t < KEYS[KEYS.length - 1][0]) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+})();
+</script>
+</body>
+</html>

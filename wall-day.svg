@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b9cbdc"/>
+      <stop offset=".45" stop-color="#d6e1ea"/>
+      <stop offset="1" stop-color="#eef0ee"/>
+    </linearGradient>
+    <linearGradient id="mtFar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9a9aa0"/>
+      <stop offset="1" stop-color="#b7b4b6"/>
+    </linearGradient>
+    <linearGradient id="mt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c5a5e"/>
+      <stop offset="1" stop-color="#7a6f66"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6cfa6"/>
+      <stop offset="1" stop-color="#c9a877"/>
+    </linearGradient>
+    <linearGradient id="sand2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1dfbd"/>
+      <stop offset="1" stop-color="#d1b182"/>
+    </linearGradient>
+    <linearGradient id="sand3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c3a070"/>
+      <stop offset="1" stop-color="#e3c69a"/>
+    </linearGradient>
+    <radialGradient id="haze" cx=".5" cy=".55" r=".6">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1400" height="1000" fill="url(#sky)"/>
+  <path d="M0 560 L120 500 L230 530 L330 470 L440 520 L560 450 L680 500 L800 440 L920 490 L1040 455 L1160 500 L1280 470 L1400 505 L1400 640 L0 640Z" fill="url(#mtFar)"/>
+  <path d="M0 600 L90 560 L180 585 L290 530 L400 575 L520 520 L640 565 L760 505 L880 560 L1000 525 L1120 570 L1240 535 L1400 580 L1400 660 L0 660Z" fill="url(#mt)"/>
+  <rect y="540" width="1400" height="160" fill="url(#haze)"/>
+  <path d="M0 640 C 250 600, 450 700, 700 660 C 950 620, 1150 700, 1400 650 L1400 1000 L0 1000Z" fill="url(#sand)"/>
+  <path d="M0 760 C 300 700, 500 820, 820 740 C 1050 680, 1250 760, 1400 720 L1400 1000 L0 1000Z" fill="url(#sand2)"/>
+  <path d="M0 880 C 220 820, 480 900, 700 860 C 950 810, 1200 880, 1400 840 L1400 1000 L0 1000Z" fill="url(#sand3)"/>
+  <path d="M0 720 C 300 690, 500 760, 700 740" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/>
+  <path d="M760 790 C 1000 740, 1200 800, 1400 770" stroke="#fff" stroke-opacity=".3" stroke-width="3" fill="none"/>
+</svg>
