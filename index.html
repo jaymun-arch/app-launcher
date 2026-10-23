@@ -112,11 +112,43 @@
   /* ---------- 안쪽 화면 ---------- */
   .screen {
     position: relative; width: 100%; height: 100%; overflow: hidden;
-    color: #fff; font-size: calc(var(--w) * .036);
-    background: url("wall-day.svg") no-repeat; background-size: 200% 100%;
+    color: #fff; font-size: calc(var(--w) * .036); background: #c9b08a;
   }
-  .panel.left  .screen { border-radius: calc(var(--r) * .78) 0 0 calc(var(--r) * .78); background-position: 0 0; }
-  .panel.right .screen { border-radius: 0 calc(var(--r) * .78) calc(var(--r) * .78) 0; background-position: 100% 0; }
+  .panel.left  .screen { border-radius: calc(var(--r) * .78) 0 0 calc(var(--r) * .78); }
+  .panel.right .screen { border-radius: 0 calc(var(--r) * .78) calc(var(--r) * .78) 0; }
+  /* 사진 배경 (wall.jpg · Unsplash 무료 라이선스) — 두 화면에 걸쳐 하나로 이어지고 천천히 움직임 */
+  .wall {
+    position: absolute; top: 0; width: 200%; height: 100%; pointer-events: none;
+    background: url("wall.jpg") center 60% / cover no-repeat;
+    animation: kenburns 46s ease-in-out infinite alternate; will-change: transform;
+  }
+  .panel.left  .wall { left: 0; }
+  .panel.right .wall { left: -100%; }
+  @keyframes kenburns {
+    from { transform: scale(1.04) translate(0, 0); }
+    to   { transform: scale(1.12) translate(-1.6%, 1.2%); }
+  }
+  /* 떠가는 구름·안개 */
+  .wall::before {
+    content: ""; position: absolute; inset: 0 -50% 45% -50%; opacity: .55;
+    background:
+      radial-gradient(42% 60% at 18% 42%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
+      radial-gradient(30% 55% at 48% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%),
+      radial-gradient(36% 50% at 76% 46%, rgba(255,255,255,.65), rgba(255,255,255,0) 70%),
+      radial-gradient(26% 40% at 96% 30%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%);
+    filter: blur(2px); animation: drift 110s linear infinite;
+  }
+  @keyframes drift { from { transform: translateX(-12%); } to { transform: translateX(12%); } }
+  /* 햇빛이 스치는 느낌 + 아래쪽 가독성용 살짝 어둡게 */
+  .wall::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(35% 45% at 70% 8%, rgba(255,235,200,.45), rgba(255,235,200,0) 70%),
+      linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,.18) 100%);
+    animation: glow 18s ease-in-out infinite alternate;
+  }
+  @keyframes glow { from { opacity: .7; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .wall, .wall::before, .wall::after { animation: none; } }
   .crease { position: absolute; top: 0; bottom: 0; width: 7%; pointer-events: none; }
   .panel.left  .crease { right: 0; background: linear-gradient(to right, transparent, rgba(0,0,0,.12) 85%, rgba(255,255,255,.12)); }
   .panel.right .crease { left: 0;  background: linear-gradient(to left,  transparent, rgba(0,0,0,.12) 85%, rgba(255,255,255,.12)); }
@@ -308,10 +340,15 @@
   .cover {
     position: relative; width: 100%; height: 100%; overflow: hidden; color: #fff;
     border-radius: 0 calc(var(--r) * .78) calc(var(--r) * .78) 0;
-    background: url("wall-dusk.svg") center / cover no-repeat;
+    background: url("wall.jpg") 40% 60% / 180% auto no-repeat;
     display: flex; flex-direction: column; align-items: center;
     padding-top: 9%;
   }
+  .cover::before { /* 노을·밤 느낌의 색 덮개 */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(20,16,40,.75) 0%, rgba(60,40,70,.45) 45%, rgba(120,70,50,.35) 100%);
+  }
+  .cover > * { position: relative; }
   .cover .cam { opacity: 1; right: auto; left: 50%; top: 2.6%; transform: translateX(-50%); width: 3.6%; }
   .cover .date { font-size: calc(var(--w) * .05); font-weight: 600; opacity: .9; }
   .cover .time {
@@ -373,6 +410,7 @@
           <div class="btn b3"></div>
           <div class="face front">
             <div class="screen">
+              <div class="wall"></div>
               <div class="weather" id="weather">
                 <div class="top">
                   <div class="city" id="wxCity">날씨</div>
@@ -414,6 +452,7 @@
           <div class="btn b2"></div>
           <div class="face front">
             <div class="screen">
+              <div class="wall"></div>
               <div class="cam"></div>
               <div class="status">
                 <span class="js-time"></span>
